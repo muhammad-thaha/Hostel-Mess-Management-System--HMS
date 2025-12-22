@@ -1,20 +1,121 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# GCEK Hostel Mess Management System (HMMS)
 
-# Run and deploy your AI Studio app
+A full-stack platform for managing hostel mess operations at GCEK, including menu planning, attendance, inventory, announcements, complaints, and role-based access. Built with React (Vite), Node.js/Express, MongoDB, and Gemini LLM integration.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/drive/1rRwlsnFnzrj80rXVPmjzWX4nDlEuGkBO
+## Features
 
-## Run Locally
+- **Role-based Access:** Student, Staff, Warden, Mess Manager, Admin
+- **Mess Menu Management:** View, update, and schedule weekly menus
+- **Attendance Tracking:** Record and analyze meal attendance
+- **Resource Inventory:** Track groceries, supplies, and thresholds
+- **Complaint System:** File and resolve complaints, LLM-powered analysis
+- **Announcements:** Smart, LLM-powered announcements
+- **LLM Chatbot:** Gemini-powered assistant for queries and insights
+- **Secure Auth:** Registration and login with JWT
+- **Modern UI:** Responsive, dashboard-style interface
 
-**Prerequisites:**  Node.js
+---
 
+## Project Structure
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `/pages` — React pages (Dashboard, MessManagement, Attendance, Inventory, etc.)
+- `/components` — Shared UI components
+- `/backend` — Express API, MongoDB models, authentication, LLM integration
+- `/types.ts` — Shared TypeScript types
+- `/constants.tsx` — App constants and mock data
+
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js (v18+ recommended)
+- MongoDB (local or Atlas)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/muhammad-thaha/Hostel-Mess-Management-System--HMS.git
+cd Hostel-Mess-Management-System--HMS
+```
+
+### 2. Install dependencies
+
+#### Frontend
+
+```bash
+npm install
+```
+
+#### Backend
+
+```bash
+cd backend
+npm install
+```
+
+### 3. Environment Variables
+
+#### Frontend
+
+- Copy `.env.local` and set your Gemini API key:
+  ```env
+  GEMINI_API_KEY=your_gemini_api_key
+  ```
+
+#### Backend
+
+- Copy `.env` and set your MongoDB URI and Gemini API key:
+  ```env
+  MONGO_URI=mongodb://localhost:27017/hmms
+  PORT=5000
+  GEMINI_API_KEY=your_gemini_api_key
+  ```
+
+### 4. Run the backend server
+
+```bash
+cd backend
+npm run dev
+# Runs on http://localhost:5000
+```
+
+### 5. Run the frontend app
+
+```bash
+cd ..
+npm run dev
+# Runs on http://localhost:5173
+```
+
+---
+
+## Usage
+
+- Register or login with your role (Student, Staff, Warden, Mess Manager, Admin)
+- Access features based on your role
+- Use the dashboard for analytics and quick actions
+- Mess menu, attendance, inventory, complaints, and announcements are all live and role-filtered
+
+---
+
+## Tech Stack
+
+- **Frontend:** React, Vite, TypeScript, Lucide Icons, Tailwind CSS
+- **Backend:** Node.js, Express, MongoDB, Mongoose, JWT, Gemini API
+
+---
+
+## Project Metadata
+
+- **Name:** GCEK Hostel Mess Management System
+- **Description:** Specialized platform for managing mess operations at GCEK, focusing on timings, menu planning, resource inventory, and attendance tracking.
+
+---
+
+## License
+
+MIT License
