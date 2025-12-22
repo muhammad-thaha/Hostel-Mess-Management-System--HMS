@@ -21,23 +21,31 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
   // Helper to determine if user is manager
   const isManager = user.role === "ADMIN" || user.role === "MESS_MANAGER";
 
-  useEffect(() => {
-    // Fetch current week's menu
-    fetch("/api/menu?type=current")
-      .then((res) => res.json())
-      .then((data) => setCurrentMenu(data))
-      .catch(() => setCurrentMenu([]));
-    // Fetch upcoming week's menu
-    fetch("/api/menu?type=upcoming")
-      .then((res) => res.json())
-      .then((data) => setUpcomingMenu(data))
-      .catch(() => setUpcomingMenu([]));
-    // Fetch mess members
-    fetch("/api/users")
-      .then((res) => res.json())
-      .then((data) => setMembers(data))
-      .catch(() => setMembers([]));
-  }, []);
+  const handleSaveMenu = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/menu?type=${selectedMenu}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editMenu),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update menu");
+      }
+      // Update UI with new menu
+      if (selectedMenu === "current") {
+        setCurrentMenu(editMenu);
+      } else {
+        setUpcomingMenu(editMenu);
+      }
+      setShowModal(false);
+    } catch (err: any) {
+      setError(err.message || "Error updating menu");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleOpenModal = () => {
     setEditMenu(selectedMenu === "current" ? currentMenu : upcomingMenu);
