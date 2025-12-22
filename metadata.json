@@ -1,0 +1,7 @@
+{
+  "name": "GCEK Hostel Mess Management System",
+  "description": "A specialized platform for managing mess operations at GCEK, focusing on timings, menu planning, resource inventory, and attendance tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
