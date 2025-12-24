@@ -26,6 +26,7 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
     role: UserRole.STUDENT,
     registerNumber: "",
     department: "",
+    position: "",
   });
   const [error, setError] = useState("");
 
@@ -55,15 +56,31 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
   };
 
   const roles = [
-    { id: UserRole.STUDENT, label: "Student", icon: <UserIcon size={18} /> },
-    { id: UserRole.ADMIN, label: "Warden", icon: <ShieldCheck size={18} /> },
     {
-      id: UserRole.MESS_MANAGER,
-      label: "Manager",
+      id: UserRole.CHAIRMAN_SECRETARY,
+      label: "Chairman / Secretary",
       icon: <ChefHat size={18} />,
+      options: [
+        { value: "CHAIRMAN", label: "Chairman" },
+        { value: "SECRETARY", label: "Secretary" },
+      ],
+      colSpan: "col-span-2",
+    },
+    {
+      id: UserRole.WARDEN_MATREN,
+      label: "Warden / Matron",
+      icon: <ShieldCheck size={18} />,
+      options: [
+        { value: "WARDEN", label: "Warden" },
+        { value: "MATREN", label: "Matron" },
+      ],
+      colSpan: "col-span-2",
     },
     { id: UserRole.STAFF, label: "Staff", icon: <Wrench size={18} /> },
+    { id: UserRole.STUDENT, label: "Student", icon: <UserIcon size={18} /> },
   ];
+
+  const [subRole, setSubRole] = useState<string>("");
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-6 relative overflow-hidden">
@@ -108,23 +125,26 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
                 Select Your Role
               </p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {roles.map((role) => (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => handleRoleChange(role.id)}
-                    className={`flex flex-col items-center justify-center space-y-2 py-4 px-2 rounded-2xl border-2 transition-all duration-300 ${
-                      formData.role === role.id
+                  <div key={role.id} className={`flex flex-col items-center ${role.colSpan || 'col-span-1'}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleRoleChange(role.id);
+                        setSubRole("");
+                      }}
+                      className={`w-full flex flex-col items-center justify-center space-y-2 py-4 px-2 rounded-2xl border-2 transition-all duration-300 ${formData.role === role.id
                         ? `border-emerald-600 bg-emerald-50 text-emerald-700 font-black scale-[1.05] shadow-lg shadow-emerald-100`
                         : "border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50"
-                    }`}
-                  >
-                    {role.icon}
-                    <span className="text-[9px] font-bold uppercase tracking-tighter">
-                      {role.label}
-                    </span>
-                  </button>
+                        }`}
+                    >
+                      {role.icon}
+                      <span className="text-[9px] font-bold uppercase tracking-tighter">
+                        {role.label}
+                      </span>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -195,6 +215,60 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
                   />
                 </div>
               </div>
+
+              {/* Position dropdown for multi-named roles, now in details form */}
+              {(formData.role === UserRole.CHAIRMAN_SECRETARY ||
+                formData.role === UserRole.WARDEN_MATREN) && (
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+                      Position
+                    </label>
+                    <div className="relative">
+                      <select
+                        required
+                        value={formData.position}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            position: e.target.value,
+                          }))
+                        }
+                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold appearance-none cursor-pointer"
+                        style={{
+                          WebkitAppearance: "none",
+                          MozAppearance: "none",
+                          appearance: "none",
+                        }}
+                      >
+                        <option value="">Select Position</option>
+                        {formData.role === UserRole.CHAIRMAN_SECRETARY && (
+                          <>
+                            <option value="Chairman">Chairman</option>
+                            <option value="Secretary">Secretary</option>
+                          </>
+                        )}
+                        {formData.role === UserRole.WARDEN_MATREN && (
+                          <>
+                            <option value="Warden">Warden</option>
+                            <option value="Matren">Matron</option>
+                          </>
+                        )}
+                      </select>
+                      {/* Custom dropdown arrow */}
+                      <svg
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
 
               {formData.role === UserRole.STUDENT && (
                 <>

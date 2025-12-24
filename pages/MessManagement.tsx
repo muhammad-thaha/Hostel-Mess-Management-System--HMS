@@ -19,7 +19,7 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
   const [members, setMembers] = useState<User[]>([]);
 
   // Helper to determine if user is manager
-  const isManager = user.role === "ADMIN" || user.role === "MESS_MANAGER";
+  const isManager = user.role === UserRole.CHAIRMAN_SECRETARY || user.role === UserRole.WARDEN_MATREN;
 
   const handleSaveMenu = async () => {
     setSaving(true);
@@ -258,21 +258,19 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
               </h3>
               <div className="bg-slate-50 p-1 rounded-2xl border border-slate-100 inline-flex">
                 <button
-                  className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${
-                    selectedMenu === "current"
+                  className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${selectedMenu === "current"
                       ? "text-emerald-600 bg-white shadow-sm"
                       : "text-slate-400 hover:text-slate-600"
-                  }`}
+                    }`}
                   onClick={() => setSelectedMenu("current")}
                 >
                   Current
                 </button>
                 <button
-                  className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${
-                    selectedMenu === "upcoming"
+                  className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${selectedMenu === "upcoming"
                       ? "text-emerald-600 bg-white shadow-sm"
                       : "text-slate-400 hover:text-slate-600"
-                  }`}
+                    }`}
                   onClick={() => setSelectedMenu("upcoming")}
                 >
                   Upcoming

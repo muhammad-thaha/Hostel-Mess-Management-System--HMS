@@ -1,16 +1,57 @@
 
-import React, { useState } from 'react';
-import { UserRole, MealType } from '../types';
-import { MOCK_USERS } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { User, UserRole, MealType, AttendanceRecord } from '../types';
 import { Calendar, Search, Check, X, Download, Utensils } from 'lucide-react';
 
 const Attendance: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [mealType, setMealType] = useState<MealType>('Lunch');
-  const students = MOCK_USERS.filter(u => u.role === UserRole.STUDENT);
-  const [records, setRecords] = useState<Record<string, 'Present' | 'Absent'>>(
-    Object.fromEntries(students.map(s => [s.id, 'Present']))
-  );
+  const [students, setStudents] = useState<User[]>([]);
+  const [records, setRecords] = useState<Record<string, 'Present' | 'Absent'>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then((data: User[]) => {
+        const studentList = data.filter(u => u.role === UserRole.STUDENT);
+        setStudents(studentList);
+        // Initialize records with default Present or fetch existing
+        const initialRecords: Record<string, 'Present' | 'Absent'> = {};
+        studentList.forEach(s => initialRecords[s.id || s._id] = 'Present'); // Default to Present
+        setRecords(initialRecords);
+      })
+      .catch(err => console.error("Failed to fetch users", err));
+  }, []);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      // Create attendance records for each student
+      const promises = students.map(student => {
+        const status = records[student.id || student._id];
+        return fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: student.id || student._id,
+            studentName: student.name,
+            mealType,
+            status,
+            date
+          })
+        });
+      });
+
+      await Promise.all(promises);
+      alert('Attendance submitted successfully');
+    } catch (err) {
+      console.error('Failed to submit attendance', err);
+      alert('Failed to submit attendance');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const presentCount = Object.values(records).filter(v => v === 'Present').length;
   const totalCount = students.length;
@@ -39,9 +80,9 @@ const Attendance: React.FC = () => {
         <div className="space-y-6 md:col-span-1">
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 rounded-full border-4 border-emerald-500 border-t-gray-100 flex items-center justify-center mb-4">
-               <div className="text-center">
-                  <span className="text-xl font-bold text-emerald-600">{Math.round((presentCount/totalCount)*100)}%</span>
-               </div>
+              <div className="text-center">
+                <span className="text-xl font-bold text-emerald-600">{totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0}%</span>
+              </div>
             </div>
             <p className="text-sm font-bold text-gray-900">{mealType} Coverage</p>
             <p className="text-xs text-gray-500 mt-1">{presentCount} of {totalCount} students marked</p>
@@ -52,17 +93,21 @@ const Attendance: React.FC = () => {
               <Calendar size={16} className="mr-2 text-emerald-600" />
               Session Date
             </h3>
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-100 rounded-lg text-sm bg-gray-50 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
           </div>
 
-          <button className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 font-bold">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 font-bold disabled:opacity-50"
+          >
             <Check size={18} />
-            <span>Submit {mealType} Logs</span>
+            <span>{submitting ? 'Submitting...' : `Submit ${mealType} Logs`}</span>
           </button>
         </div>
 
@@ -88,50 +133,51 @@ const Attendance: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {students.map(student => (
-                  <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-xs border border-emerald-100">
-                          {student.name.charAt(0)}
+                {students.map(student => {
+                  const id = student.id || student._id;
+                  return (
+                    <tr key={id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-xs border border-emerald-100">
+                            {student.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{student.name}</p>
+                            <p className="text-[10px] text-gray-500 uppercase font-medium">{student.department}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">{student.name}</p>
-                          <p className="text-[10px] text-gray-500 uppercase font-medium">{student.department}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">{student.messCardId || 'N/A'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => setRecords(prev => ({ ...prev, [id]: 'Present' }))}
+                            className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${records[id] === 'Present'
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100'
+                                : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                              }`}
+                          >
+                            <Check size={14} />
+                            <span>Present</span>
+                          </button>
+                          <button
+                            onClick={() => setRecords(prev => ({ ...prev, [id]: 'Absent' }))}
+                            className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${records[id] === 'Absent'
+                                ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100'
+                                : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                              }`}
+                          >
+                            <X size={14} />
+                            <span>Absent</span>
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded">{student.messCardId || 'N/A'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center space-x-2">
-                        <button 
-                          onClick={() => setRecords(prev => ({...prev, [student.id]: 'Present'}))}
-                          className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                            records[student.id] === 'Present' 
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100' 
-                              : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
-                          }`}
-                        >
-                          <Check size={14} />
-                          <span>Present</span>
-                        </button>
-                        <button 
-                          onClick={() => setRecords(prev => ({...prev, [student.id]: 'Absent'}))}
-                          className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                            records[student.id] === 'Absent' 
-                              ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100' 
-                              : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
-                          }`}
-                        >
-                          <X size={14} />
-                          <span>Absent</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

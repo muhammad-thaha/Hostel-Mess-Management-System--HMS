@@ -1,16 +1,18 @@
 
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  MESS_MANAGER = 'MESS_MANAGER',
+  CHAIRMAN_SECRETARY = 'CHAIRMAN_SECRETARY',
+  WARDEN_MATREN = 'WARDEN_MATREN',
+  STAFF = 'STAFF',
   STUDENT = 'STUDENT',
-  STAFF = 'STAFF'
 }
 
 export interface User {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
   email: string;
   role: UserRole;
+  password?: string;
   registerNumber?: string;
   department?: string;
   year?: string;
@@ -19,7 +21,8 @@ export interface User {
 }
 
 export interface MessResource {
-  id: string;
+  _id?: string;
+  id?: string;
   name: string;
   category: 'Groceries' | 'Vegetables' | 'Dairy' | 'Fuel' | 'Spices';
   quantity: number;
@@ -29,14 +32,18 @@ export interface MessResource {
 }
 
 export interface MessMenu {
+  _id?: string;
+  id?: string;
   day: string;
   breakfast: string;
   lunch: string;
   dinner: string;
+  type?: 'current' | 'upcoming';
 }
 
 export interface Complaint {
-  id: string;
+  _id?: string;
+  id?: string;
   studentId: string;
   studentName: string;
   category: 'Quality' | 'Hygiene' | 'Timings' | 'Staff' | 'Other';
@@ -46,7 +53,8 @@ export interface Complaint {
 }
 
 export interface Announcement {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   content: string;
   author: string;
@@ -57,7 +65,8 @@ export interface Announcement {
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner';
 
 export interface AttendanceRecord {
-  id: string;
+  _id?: string;
+  id?: string;
   studentId: string;
   studentName: string;
   mealType: MealType;

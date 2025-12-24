@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, MessResource } from '../types';
-import { MOCK_RESOURCES } from '../constants';
 import { Package, Plus, Search, AlertCircle, TrendingDown, Clock } from 'lucide-react';
 
 interface InventoryProps {
@@ -9,7 +8,14 @@ interface InventoryProps {
 }
 
 const Inventory: React.FC<InventoryProps> = ({ user }) => {
-  const [resources, setResources] = useState<MessResource[]>(MOCK_RESOURCES);
+  const [resources, setResources] = useState<MessResource[]>([]);
+
+  useEffect(() => {
+    fetch('/api/resources')
+      .then((res) => res.json())
+      .then((data) => setResources(data))
+      .catch((err) => console.error("Failed to fetch resources", err));
+  }, []);
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -58,9 +64,9 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
         <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Filter resources..." 
+            <input
+              type="text"
+              placeholder="Filter resources..."
               className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
             />
           </div>
@@ -86,9 +92,9 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
               {resources.map((res) => {
                 const isLow = res.quantity <= res.threshold;
                 const percentage = Math.min((res.quantity / (res.threshold * 4)) * 100, 100);
-                
+
                 return (
-                  <tr key={res.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={res._id || res.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-5">
                       <p className="text-sm font-bold text-gray-900">{res.name}</p>
                     </td>
@@ -99,7 +105,7 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
                       <div className="space-y-1.5">
                         <p className="text-sm font-bold text-gray-800">{res.quantity} {res.unit}</p>
                         <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className={`h-full rounded-full ${isLow ? 'bg-red-500' : 'bg-emerald-500'}`}
                             style={{ width: `${percentage}%` }}
                           ></div>
@@ -107,9 +113,8 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        isLow ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isLow ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
                         {isLow ? 'Critical Stock' : 'Stable Stock'}
                       </span>
                     </td>

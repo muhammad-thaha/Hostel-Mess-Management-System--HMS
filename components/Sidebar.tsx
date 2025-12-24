@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { LogOut, UtensilsCrossed } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,11 +30,10 @@ const Sidebar: React.FC<SidebarProps> = ({ items, activeTab, setActiveTab, user,
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${
-              activeTab === item.id
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${activeTab === item.id
+              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+              : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <span className={`${activeTab === item.id ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'} transition-colors`}>
               {item.icon}
@@ -52,7 +51,9 @@ const Sidebar: React.FC<SidebarProps> = ({ items, activeTab, setActiveTab, user,
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold truncate text-white">{user.name}</p>
             <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tighter">
-              {user.role.replace('_', ' ')}
+              {(user.role === UserRole.CHAIRMAN_SECRETARY || user.role === UserRole.WARDEN_MATREN) && user.position
+                ? user.position
+                : user.role.replace('_', ' / ')}
             </p>
           </div>
         </div>

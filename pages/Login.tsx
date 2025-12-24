@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { User, UserRole } from "../types";
-import { MOCK_USERS } from "../constants";
+
 import {
   LogIn,
   ShieldCheck,
@@ -44,14 +44,28 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggleAuth }) => {
   };
 
   const roles = [
-    { id: UserRole.STUDENT, label: "Student", icon: <UserIcon size={18} /> },
-    { id: UserRole.ADMIN, label: "Warden", icon: <ShieldCheck size={18} /> },
     {
-      id: UserRole.MESS_MANAGER,
-      label: "Manager",
+      id: UserRole.CHAIRMAN_SECRETARY,
+      label: "Chairman / Secretary",
       icon: <ChefHat size={18} />,
+      colSpan: "col-span-2",
     },
-    { id: UserRole.STAFF, label: "Staff", icon: <Wrench size={18} /> },
+    {
+      id: UserRole.WARDEN_MATREN,
+      label: "Warden / Matron",
+      icon: <ShieldCheck size={18} />,
+      colSpan: "col-span-2",
+    },
+    {
+      id: UserRole.STAFF,
+      label: "Staff",
+      icon: <Wrench size={18} />
+    },
+    {
+      id: UserRole.STUDENT,
+      label: "Student",
+      icon: <UserIcon size={18} />
+    },
   ];
 
   return (
@@ -89,11 +103,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, onToggleAuth }) => {
                     key={role.id}
                     type="button"
                     onClick={() => setSelectedRole(role.id)}
-                    className={`flex items-center justify-center space-x-2 py-3.5 px-2 rounded-2xl border-2 transition-all duration-300 ${
-                      selectedRole === role.id
-                        ? `border-emerald-600 bg-emerald-50 text-emerald-700 font-black shadow-sm scale-[1.02]`
-                        : "border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50"
-                    }`}
+                    className={`flex items-center justify-center space-x-2 py-3.5 px-2 rounded-2xl border-2 transition-all duration-300 ${role.colSpan || 'col-span-1'} ${selectedRole === role.id
+                      ? `border-emerald-600 bg-emerald-50 text-emerald-700 font-black shadow-sm scale-[1.02]`
+                      : "border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50"
+                      }`}
                   >
                     {role.icon}
                     <span className="text-[11px] font-bold">{role.label}</span>

@@ -6,7 +6,7 @@ A full-stack platform for managing hostel mess operations at GCEK, including men
 
 ## Features
 
-- **Role-based Access:** Student, Staff, Warden, Mess Manager, Admin
+- **Role-based Access:** Student, Staff, Warden, Mess Manager
 - **Mess Menu Management:** View, update, and schedule weekly menus
 - **Attendance Tracking:** Record and analyze meal attendance
 - **Resource Inventory:** Track groceries, supplies, and thresholds
@@ -95,7 +95,7 @@ npm run dev
 
 ## Usage
 
-- Register or login with your role (Student, Staff, Warden, Mess Manager, Admin)
+- Register or login with your role (Student, Staff, Warden, Mess Manager)
 - Access features based on your role
 - Use the dashboard for analytics and quick actions
 - Mess menu, attendance, inventory, complaints, and announcements are all live and role-filtered

@@ -1,6 +1,6 @@
 
-
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import { User, MessResource, MessMenu, Complaint, Announcement, AttendanceRecord } from './models.js';
 import { askGemini } from './gemini.js';
 
@@ -48,7 +48,17 @@ router.get('/users', async (req, res) => {
   res.json(await User.find());
 });
 router.post('/users', async (req, res) => {
-  res.json(await User.create(req.body));
+  try {
+    const { password, ...rest } = req.body;
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      res.json(await User.create({ ...rest, password: hashedPassword }));
+    } else {
+      res.status(400).json({ error: 'Password is required' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 router.get('/users/:id', async (req, res) => {
   res.json(await User.findById(req.params.id));
