@@ -1,5 +1,5 @@
-import React from "react";
-import { User } from "../types";
+import React, { useEffect, useState } from "react";
+import { User, UserRole } from "../types";
 import {
   BarChart,
   Bar,
@@ -20,6 +20,9 @@ import {
   ArrowRight,
   TrendingDown,
   Sparkles,
+  PlusCircle,
+  FileText,
+  Megaphone,
 } from "lucide-react";
 
 const mealAttendanceData = [
@@ -51,11 +54,10 @@ const StatCard: React.FC<{
       </div>
       {trend && (
         <span
-          className={`text-[10px] font-extrabold px-3 py-1 rounded-full ${
-            trend.startsWith("+")
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-red-100 text-red-700"
-          }`}
+          className={`text-[10px] font-extrabold px-3 py-1 rounded-full ${trend.startsWith("+")
+            ? "bg-emerald-100 text-emerald-700"
+            : "bg-red-100 text-red-700"
+            }`}
         >
           {trend}
         </span>
@@ -68,13 +70,12 @@ const StatCard: React.FC<{
   </div>
 );
 
-import { useEffect, useState } from "react";
-
 const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
   const [users, setUsers] = useState([]);
   const [resources, setResources] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [showQuickActions, setShowQuickActions] = useState(false);
 
   useEffect(() => {
     fetch("/api/users")
@@ -98,8 +99,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
     (u: any) => u.messStatus === "Active"
   ).length;
 
+  const isAdmin =
+    user.role === UserRole.CHAIRMAN_SECRETARY ||
+    user.role === UserRole.WARDEN_MATREN;
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+    <div
+      className="space-y-8 max-w-7xl mx-auto pb-12"
+      onClick={() => {
+        if (showQuickActions) setShowQuickActions(false);
+      }}
+    >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <div className="flex items-center space-x-2 text-emerald-600 mb-2">
@@ -117,13 +127,62 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
             served so far.
           </p>
         </div>
-        <div className="flex items-center space-x-4">
-          <button className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-200 transition-all shadow-sm">
+        <div className="flex items-center space-x-4 relative">
+          <button
+            onClick={() => setActiveTab("attendance")}
+            className="px-6 py-3 bg-white border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-200 transition-all shadow-sm"
+          >
             View Analytics
           </button>
-          <button className="px-6 py-3 bg-slate-950 text-white rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95">
-            Quick Entry
-          </button>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowQuickActions(!showQuickActions);
+              }}
+              className="px-6 py-3 bg-slate-950 text-white rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95 flex items-center space-x-2"
+            >
+              <span>Quick Entry</span>
+              {showQuickActions ? (
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              ) : null}
+            </button>
+            {showQuickActions && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <button
+                  onClick={() => setActiveTab("complaints")}
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
+                >
+                  <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                    <FileText size={16} />
+                  </div>
+                  <span className="text-xs font-bold">New Complaint</span>
+                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      onClick={() => setActiveTab("announcements")}
+                      className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
+                    >
+                      <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                        <Megaphone size={16} />
+                      </div>
+                      <span className="text-xs font-bold">Post Notice</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("mess-members")}
+                      className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
+                    >
+                      <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                        <PlusCircle size={16} />
+                      </div>
+                      <span className="text-xs font-bold">Add Member</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -261,7 +320,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
                 {lowStockResources.map((item: any) => (
                   <div
                     key={item._id || item.id}
-                    className="group flex items-center justify-between p-4 rounded-3xl bg-slate-50 border border-slate-100 hover:border-red-200 transition-all"
+                    className="group flex items-center justify-between p-4 rounded-3xl bg-slate-50 border border-slate-100 hover:border-red-200 transition-all cursor-pointer"
+                    onClick={() => setActiveTab("inventory")}
                   >
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center mr-4 text-red-600 group-hover:scale-110 transition-transform">
@@ -300,14 +360,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
                   <div
                     key={complaint._id || complaint.id}
                     className="p-5 border border-slate-100 rounded-3xl hover:bg-slate-50 transition-all group cursor-pointer"
+                    onClick={() => setActiveTab("complaints")}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span
-                        className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${
-                          complaint.status === "Resolved"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}
+                        className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${complaint.status === "Resolved"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                          }`}
                       >
                         {complaint.status}
                       </span>

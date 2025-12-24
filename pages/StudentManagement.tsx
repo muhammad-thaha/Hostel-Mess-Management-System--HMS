@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import CustomDropdown from "../components/CustomDropdown";
 
 const StudentManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,8 +48,31 @@ const StudentManagement: React.FC = () => {
     return matchesRole && matchesSearch;
   });
 
+  /* View Logs Modal Logic */
+  const [selectedUserLogs, setSelectedUserLogs] = useState<any[] | null>(null);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const handleViewLogs = async (userId: string) => {
+    setLoadingLogs(true);
+    setShowLogsModal(true);
+    try {
+      const res = await fetch("/api/attendance");
+      const data = await res.json();
+      // Filter logs for this user (client-side filtering for now as API returns all)
+      const userLogs = data.filter((log: any) => (log.studentId === userId) || (log.studentId && log.studentId._id === userId));
+      setSelectedUserLogs(userLogs);
+    } catch (err) {
+      console.error(err);
+      setSelectedUserLogs([]);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* ... Header ... */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
@@ -91,8 +115,8 @@ const StudentManagement: React.FC = () => {
               <button
                 key={role.value}
                 className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${roleFilter === role.value
-                    ? "bg-emerald-600 text-white border-emerald-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                   }`}
                 onClick={() => setRoleFilter(role.value)}
               >
@@ -100,7 +124,10 @@ const StudentManagement: React.FC = () => {
               </button>
             ))}
           </div>
-          <button className="flex-1 md:flex-none px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black">
+          <button
+            onClick={() => alert("Summary Report Feature: Coming Soon in Next Update!")}
+            className="flex-1 md:flex-none px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black"
+          >
             Attendance Summary
           </button>
         </div>
@@ -154,189 +181,8 @@ const StudentManagement: React.FC = () => {
                   </button>
                 </div>
               </div>
-              {/* Enroll Modal */}
-              {showEnroll && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                  <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative">
-                    <button
-                      className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-700"
-                      onClick={() => setShowEnroll(false)}
-                    >
-                      <X size={20} />
-                    </button>
-                    <h2 className="text-xl font-black mb-4">
-                      Enroll New Member
-                    </h2>
-                    {enrollError && (
-                      <div className="text-red-600 font-bold mb-2">
-                        {enrollError}
-                      </div>
-                    )}
-                    <form
-                      className="space-y-4"
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        setEnrollLoading(true);
-                        setEnrollError(null);
-                        try {
-                          const res = await fetch("/api/users", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(enrollData),
-                          });
-                          if (!res.ok)
-                            throw new Error("Failed to enroll member");
-                          setShowEnroll(false);
-                          setEnrollData({ role: UserRole.STUDENT });
-                          // Refresh members
-                          fetch("/api/users")
-                            .then((res) => res.json())
-                            .then((data) => setMembers(data));
-                        } catch (err: any) {
-                          setEnrollError(
-                            err.message || "Error enrolling member"
-                          );
-                        } finally {
-                          setEnrollLoading(false);
-                        }
-                      }}
-                    >
-                      <div>
-                        <label className="block text-xs font-bold mb-1">
-                          Role
-                        </label>
-                        <select
-                          className="w-full border rounded px-2 py-1"
-                          value={enrollData.role}
-                          onChange={(e) =>
-                            setEnrollData((d) => ({
-                              ...d,
-                              role: e.target.value as UserRole,
-                            }))
-                          }
-                          required
-                        >
-                          <option value={UserRole.CHAIRMAN_SECRETARY}>
-                            Chairman/Secretary
-                          </option>
-                          <option value={UserRole.WARDEN_MATREN}>
-                            Warden/Matren
-                          </option>
-                          <option value={UserRole.STAFF}>Staff</option>
-                          <option value={UserRole.STUDENT}>Student</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold mb-1">
-                          Name
-                        </label>
-                        <input
-                          className="w-full border rounded px-2 py-1"
-                          value={enrollData.name || ""}
-                          onChange={(e) =>
-                            setEnrollData((d) => ({
-                              ...d,
-                              name: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold mb-1">
-                          Email
-                        </label>
-                        <input
-                          className="w-full border rounded px-2 py-1"
-                          type="email"
-                          value={enrollData.email || ""}
-                          onChange={(e) =>
-                            setEnrollData((d) => ({
-                              ...d,
-                              email: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold mb-1">
-                          Password
-                        </label>
-                        <input
-                          className="w-full border rounded px-2 py-1"
-                          type="password"
-                          value={enrollData.password || ""}
-                          onChange={(e) =>
-                            setEnrollData((d) => ({
-                              ...d,
-                              password: e.target.value,
-                            }))
-                          }
-                          required
-                        />
-                      </div>
-                      {enrollData.role === UserRole.STUDENT && (
-                        <>
-                          <div>
-                            <label className="block text-xs font-bold mb-1">
-                              Register Number
-                            </label>
-                            <input
-                              className="w-full border rounded px-2 py-1"
-                              value={enrollData.registerNumber || ""}
-                              onChange={(e) =>
-                                setEnrollData((d) => ({
-                                  ...d,
-                                  registerNumber: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold mb-1">
-                              Department
-                            </label>
-                            <input
-                              className="w-full border rounded px-2 py-1"
-                              value={enrollData.department || ""}
-                              onChange={(e) =>
-                                setEnrollData((d) => ({
-                                  ...d,
-                                  department: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold mb-1">
-                              Year
-                            </label>
-                            <input
-                              className="w-full border rounded px-2 py-1"
-                              value={enrollData.year || ""}
-                              onChange={(e) =>
-                                setEnrollData((d) => ({
-                                  ...d,
-                                  year: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                        </>
-                      )}
-                      <button
-                        type="submit"
-                        className="w-full py-2 bg-emerald-600 text-white rounded font-bold mt-2 disabled:opacity-50"
-                        disabled={enrollLoading}
-                      >
-                        {enrollLoading ? "Enrolling..." : "Enroll"}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              )}
 
+              {/* Card Stats */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
@@ -382,13 +228,246 @@ const StudentManagement: React.FC = () => {
                   ? "Enrollment: June 2024"
                   : member.role}
               </span>
-              <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+              <button
+                onClick={() => handleViewLogs(member._id || member.id || "")}
+                className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:underline"
+              >
                 View Logs
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Enroll Modal */}
+      {showEnroll && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative animate-in zoom-in duration-200">
+            <button
+              className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-700"
+              onClick={() => setShowEnroll(false)}
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-black mb-4">
+              Enroll New Member
+            </h2>
+            {enrollError && (
+              <div className="text-red-600 font-bold mb-2">
+                {enrollError}
+              </div>
+            )}
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setEnrollLoading(true);
+                setEnrollError(null);
+                try {
+                  const res = await fetch("/api/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(enrollData),
+                  });
+                  if (!res.ok)
+                    throw new Error("Failed to enroll member");
+                  setShowEnroll(false);
+                  setEnrollData({ role: UserRole.STUDENT });
+                  // Refresh members
+                  fetch("/api/users")
+                    .then((res) => res.json())
+                    .then((data) => setMembers(data));
+                } catch (err: any) {
+                  setEnrollError(
+                    err.message || "Error enrolling member"
+                  );
+                } finally {
+                  setEnrollLoading(false);
+                }
+              }}
+            >
+              <div>
+                <CustomDropdown
+                  label="Role"
+                  required
+                  value={enrollData.role as string}
+                  onChange={(val) =>
+                    setEnrollData((d) => ({
+                      ...d,
+                      role: val as UserRole,
+                    }))
+                  }
+                  options={[
+                    { value: UserRole.CHAIRMAN_SECRETARY, label: "Chairman/Secretary" },
+                    { value: UserRole.WARDEN_MATREN, label: "Warden/Matron" },
+                    { value: UserRole.STAFF, label: "Staff" },
+                    { value: UserRole.STUDENT, label: "Student" },
+                  ]}
+                  placeholder="Select Role"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Name</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold"
+                  value={enrollData.name || ""}
+                  onChange={(e) =>
+                    setEnrollData((d) => ({
+                      ...d,
+                      name: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Email</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold"
+                  type="email"
+                  value={enrollData.email || ""}
+                  onChange={(e) =>
+                    setEnrollData((d) => ({
+                      ...d,
+                      email: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1">Password</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold"
+                  type="password"
+                  value={enrollData.password || ""}
+                  onChange={(e) =>
+                    setEnrollData((d) => ({
+                      ...d,
+                      password: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+              {enrollData.role === UserRole.STUDENT && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold mb-1">Register Number</label>
+                    <input
+                      className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold uppercase"
+                      value={enrollData.registerNumber || ""}
+                      onChange={(e) =>
+                        setEnrollData((d) => ({
+                          ...d,
+                          registerNumber: e.target.value.toUpperCase(),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <CustomDropdown
+                      label="Department"
+                      value={enrollData.department || ""}
+                      onChange={(val) => setEnrollData(d => ({ ...d, department: val }))}
+                      placeholder="Select Department"
+                      options={[
+                        { value: "CSE", label: "Computer Science" },
+                        { value: "ECE", label: "Electronics & Communication" },
+                        { value: "EEE", label: "Electrical & Electronics" },
+                        { value: "ME", label: "Mechanical Engineering" },
+                        { value: "CE", label: "Civil Engineering" }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold mb-1">Year</label>
+                    <input
+                      className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold"
+                      value={enrollData.year || ""}
+                      onChange={(e) =>
+                        setEnrollData((d) => ({
+                          ...d,
+                          year: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              <button
+                type="submit"
+                className="w-full py-2 bg-emerald-600 text-white rounded font-bold mt-2 disabled:opacity-50"
+                disabled={enrollLoading}
+              >
+                {enrollLoading ? "Enrolling..." : "Enroll"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Logs Modal */}
+      {showLogsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl relative animate-in zoom-in duration-200">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-bold text-xl text-gray-900">Attendance Log History</h3>
+              <button
+                onClick={() => setShowLogsModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={24} className="text-gray-400" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingLogs ? (
+                <div className="text-center py-10">
+                  <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-500 font-medium">Fetching records...</p>
+                </div>
+              ) : (
+                <>
+                  {selectedUserLogs && selectedUserLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedUserLogs.map((log) => (
+                        <div key={log._id || log.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${log.status === 'Present' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                              {log.status === 'Present' ? <UserCheck size={18} /> : <X size={18} />}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-gray-900">{log.mealType}</p>
+                              <p className="text-xs text-gray-500">{log.date}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${log.status === 'Present' ? 'bg-emerald-600 text-white' : 'bg-white border border-red-200 text-red-500'}`}>
+                              {log.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-gray-400">
+                      <p>No attendance records found for this user.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 text-center">
+              <button
+                onClick={() => setShowLogsModal(false)}
+                className="text-gray-500 font-bold text-sm hover:text-gray-800"
+              >
+                Close Viewer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {filteredMembers.length === 0 && (
         <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">

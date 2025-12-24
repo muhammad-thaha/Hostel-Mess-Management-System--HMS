@@ -12,6 +12,7 @@ import {
   Fingerprint,
   AtSign,
 } from "lucide-react";
+import CustomDropdown from "../components/CustomDropdown";
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -216,57 +217,22 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
                 </div>
               </div>
 
-              {/* Position dropdown for multi-named roles, now in details form */}
+              {/* Position dropdown for multi-named roles */}
               {(formData.role === UserRole.CHAIRMAN_SECRETARY ||
                 formData.role === UserRole.WARDEN_MATREN) && (
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
-                      Position
-                    </label>
-                    <div className="relative">
-                      <select
-                        required
-                        value={formData.position}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            position: e.target.value,
-                          }))
-                        }
-                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold appearance-none cursor-pointer"
-                        style={{
-                          WebkitAppearance: "none",
-                          MozAppearance: "none",
-                          appearance: "none",
-                        }}
-                      >
-                        <option value="">Select Position</option>
-                        {formData.role === UserRole.CHAIRMAN_SECRETARY && (
-                          <>
-                            <option value="Chairman">Chairman</option>
-                            <option value="Secretary">Secretary</option>
-                          </>
-                        )}
-                        {formData.role === UserRole.WARDEN_MATREN && (
-                          <>
-                            <option value="Warden">Warden</option>
-                            <option value="Matren">Matron</option>
-                          </>
-                        )}
-                      </select>
-                      {/* Custom dropdown arrow */}
-                      <svg
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </div>
+                    <CustomDropdown
+                      label="Position"
+                      required
+                      value={formData.position}
+                      onChange={(val) => setFormData((prev) => ({ ...prev, position: val }))}
+                      options={
+                        formData.role === UserRole.CHAIRMAN_SECRETARY
+                          ? [{ value: "Chairman", label: "Chairman" }, { value: "Secretary", label: "Secretary" }]
+                          : [{ value: "Warden", label: "Warden" }, { value: "Matron", label: "Matron" }]
+                      }
+                      placeholder="Select Position"
+                    />
                   </div>
                 )}
 
@@ -292,24 +258,20 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onToggleAuth }) => {
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
-                      Department
-                    </label>
-                    <select
+                    <CustomDropdown
+                      label="Department"
                       required
                       value={formData.department}
-                      onChange={(e) =>
-                        setFormData({ ...formData, department: e.target.value })
-                      }
-                      className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm font-bold appearance-none cursor-pointer"
-                    >
-                      <option value="">Select Department</option>
-                      <option value="CSE">Computer Science</option>
-                      <option value="ECE">Electronics & Communication</option>
-                      <option value="EEE">Electrical & Electronics</option>
-                      <option value="ME">Mechanical Engineering</option>
-                      <option value="CE">Civil Engineering</option>
-                    </select>
+                      onChange={(val) => setFormData(prev => ({ ...prev, department: val }))}
+                      placeholder="Select Department"
+                      options={[
+                        { value: "CSE", label: "Computer Science" },
+                        { value: "ECE", label: "Electronics & Communication" },
+                        { value: "EEE", label: "Electrical & Electronics" },
+                        { value: "ME", label: "Mechanical Engineering" },
+                        { value: "CE", label: "Civil Engineering" }
+                      ]}
+                    />
                   </div>
                 </>
               )}

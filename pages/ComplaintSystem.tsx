@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Filter,
 } from "lucide-react";
+import CustomDropdown from "../components/CustomDropdown";
 
 interface ComplaintSystemProps {
   user: User;
@@ -112,8 +113,8 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
                   <button
                     key={cat}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${cat === "All Complaints"
-                        ? "bg-blue-50 text-blue-600"
-                        : "text-gray-500 hover:bg-gray-50"
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-500 hover:bg-gray-50"
                       }`}
                   >
                     {cat}
@@ -154,10 +155,10 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
                   <div className="flex">
                     <div
                       className={`w-1.5 ${complaint.status === "Resolved"
-                          ? "bg-emerald-500"
-                          : complaint.status === "In Progress"
-                            ? "bg-blue-500"
-                            : "bg-orange-500"
+                        ? "bg-emerald-500"
+                        : complaint.status === "In Progress"
+                          ? "bg-blue-500"
+                          : "bg-orange-500"
                         }`}
                     ></div>
                     <div className="flex-1 p-5 sm:p-6">
@@ -246,19 +247,13 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
               </div>
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    Category
-                  </label>
-                  <select
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  <CustomDropdown
+                    label="Category"
                     value={newComplaint.category}
-                    onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })}
-                  >
-                    <option>Maintenance</option>
-                    <option>Food</option>
-                    <option>Room</option>
-                    <option>Other</option>
-                  </select>
+                    onChange={(val) => setNewComplaint({ ...newComplaint, category: val })}
+                    options={["Maintenance", "Food", "Room", "Other"].map(c => ({ value: c, label: c }))}
+                    placeholder="Select Category"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">

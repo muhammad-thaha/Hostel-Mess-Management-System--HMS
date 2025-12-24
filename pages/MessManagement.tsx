@@ -83,7 +83,7 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
       .catch(() => setMembers([]));
   }, []);
 
-  const timings = [
+  const [timings, setTimings] = useState([
     {
       label: "Breakfast",
       time: "07:30 AM - 09:00 AM",
@@ -108,7 +108,14 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
       icon: "🍲",
       color: "bg-indigo-100 text-indigo-700",
     },
-  ];
+  ]);
+  const [showTimingsModal, setShowTimingsModal] = useState(false);
+  const [editTimings, setEditTimings] = useState(timings);
+
+  const handleSaveTimings = () => {
+    setTimings(editTimings);
+    setShowTimingsModal(false);
+  };
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto pb-10">
@@ -203,10 +210,25 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
         {/* Schedule Sidebar */}
         <div className="lg:col-span-4 space-y-8">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-50">
-            <h3 className="font-black text-slate-900 mb-8 flex items-center">
-              <Clock size={22} className="mr-3 text-emerald-600" />
-              Service Timings
-            </h3>
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="font-black text-slate-900 flex items-center">
+                <Clock size={22} className="mr-3 text-emerald-600" />
+                Service Timings
+              </h3>
+              {isManager && (
+                <button
+                  onClick={() => {
+                    setEditTimings(timings);
+                    setShowTimingsModal(true);
+                  }}
+                  className="p-2 bg-slate-100 hover:bg-emerald-100 text-slate-400 hover:text-emerald-600 rounded-xl transition-all"
+                  title="Edit Timings"
+                >
+                  <Edit3 size={16} />
+                </button>
+              )}
+            </div>
+
             <div className="space-y-6">
               {timings.map((t) => (
                 <div
@@ -230,6 +252,46 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
               ))}
             </div>
           </div>
+
+          {/* Edit Timings Modal */}
+          {showTimingsModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200">
+                <h3 className="font-black text-xl mb-6 text-slate-900">Edit Service Timings</h3>
+                <div className="space-y-4">
+                  {editTimings.map((t, idx) => (
+                    <div key={t.label}>
+                      <label className="text-[10px] font-bold uppercase text-slate-400 mb-1 block">{t.label}</label>
+                      <input
+                        type="text"
+                        value={t.time}
+                        onChange={(e) => {
+                          const updated = [...editTimings];
+                          updated[idx] = { ...updated[idx], time: e.target.value };
+                          setEditTimings(updated);
+                        }}
+                        className="w-full px-4 py-2 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 mt-8">
+                  <button
+                    onClick={() => setShowTimingsModal(false)}
+                    className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveTimings}
+                    className="flex-1 py-3 bg-emerald-600 rounded-xl font-bold text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-200 relative overflow-hidden group">
             <div className="absolute -bottom-6 -right-6 text-white/10 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-700">
@@ -259,8 +321,8 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
               <div className="bg-slate-50 p-1 rounded-2xl border border-slate-100 inline-flex">
                 <button
                   className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${selectedMenu === "current"
-                      ? "text-emerald-600 bg-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
+                    ? "text-emerald-600 bg-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-600"
                     }`}
                   onClick={() => setSelectedMenu("current")}
                 >
@@ -268,8 +330,8 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
                 </button>
                 <button
                   className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${selectedMenu === "upcoming"
-                      ? "text-emerald-600 bg-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
+                    ? "text-emerald-600 bg-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-600"
                     }`}
                   onClick={() => setSelectedMenu("upcoming")}
                 >
