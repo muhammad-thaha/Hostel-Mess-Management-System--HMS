@@ -81,10 +81,10 @@ const seedData = async () => {
             const password = await bcrypt.hash(s.name, 10);
             return {
                 name: s.name,
-                email: s.name.toLowerCase().replace(/\s+/g, '') + "@student.gcek.ac.in",
+                email: s.name.toLowerCase().replace(/\s+/g, '') + "@gcek.ac.in",
                 password: password,
                 role: "STUDENT",
-                registerNumber: `KNR21CS${(100 + i).toString()}`,
+                registerNumber: `KNR21CS${(0 + i).toString()}`,
                 department: "CSE",
                 year: "3rd",
                 messStatus: "Active",

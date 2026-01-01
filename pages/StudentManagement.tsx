@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import CustomDropdown from "../components/CustomDropdown";
 
-const StudentManagement: React.FC = () => {
+interface StudentManagementProps {
+  user: User;
+}
+
+const StudentManagement: React.FC<StudentManagementProps> = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [members, setMembers] = useState<User[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
@@ -159,6 +163,14 @@ const StudentManagement: React.FC = () => {
                     className="p-1.5 text-red-500 hover:text-white hover:bg-red-500 rounded-lg border border-red-100"
                     title="Delete Member"
                     onClick={async () => {
+                      // Restricted Deletion Logic
+                      if (user.role === UserRole.WARDEN_MATREN) {
+                        if (member.role === UserRole.WARDEN_MATREN || member.role === UserRole.CHAIRMAN_SECRETARY) {
+                          alert("Permission Denied: Wardens cannot delete other Wardens or Chairman/Secretary.");
+                          return;
+                        }
+                      }
+
                       if (window.confirm(`Delete ${member.name}?`)) {
                         await fetch(`/api/users/${member._id || member.id}`, {
                           method: "DELETE",

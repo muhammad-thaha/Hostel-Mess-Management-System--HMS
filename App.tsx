@@ -78,7 +78,7 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard user={currentUser} setActiveTab={setActiveTab} />;
       case 'mess-members':
-        return <StudentManagement />;
+        return <StudentManagement user={currentUser} />;
       case 'mess-menu':
         return <MessManagement user={currentUser} />;
       case 'inventory':
