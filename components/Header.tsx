@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ user, activeTab }) => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
+    <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 shrink-0 shadow-sm z-10 print:hidden">
       <div>
         <h2 className="text-xl font-bold text-slate-800">{getTitle()}</h2>
       </div>

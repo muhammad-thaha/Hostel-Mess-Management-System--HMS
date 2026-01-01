@@ -13,7 +13,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ items, activeTab, setActiveTab, user, onLogout }) => {
   return (
-    <aside className="w-64 bg-slate-950 text-white flex flex-col h-screen sticky top-0 shadow-2xl z-20">
+    <aside className="w-64 bg-slate-950 text-white flex flex-col h-screen sticky top-0 shadow-2xl z-20 print:hidden">
       <div className="p-8 flex items-center space-x-4">
         <div className="bg-emerald-500 p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20">
           <UtensilsCrossed size={22} className="text-white" />
