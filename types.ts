@@ -24,10 +24,12 @@ export interface MessResource {
   _id?: string;
   id?: string;
   name: string;
-  category: 'Groceries' | 'Vegetables' | 'Dairy' | 'Fuel' | 'Spices';
+  category: 'Groceries' | 'Vegetables' | 'Dairy' | 'Fuel' | 'Spices' | 'Meat & Eggs';
   quantity: number;
   unit: string;
   threshold: number;
+  monthlyUsage?: number;
+  pricePerUnit?: number;
   lastUpdated: string;
 }
 

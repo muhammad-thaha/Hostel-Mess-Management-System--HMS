@@ -14,10 +14,12 @@ const userSchema = new mongoose.Schema({
 
 const messResourceSchema = new mongoose.Schema({
   name: String,
-  category: { type: String, enum: ['Groceries', 'Vegetables', 'Dairy', 'Fuel', 'Spices'] },
+  category: { type: String, enum: ['Groceries', 'Vegetables', 'Dairy', 'Fuel', 'Spices', 'Meat & Eggs'] },
   quantity: Number,
   unit: String,
   threshold: Number,
+  monthlyUsage: { type: Number, default: 0 },
+  pricePerUnit: { type: Number, default: 0 },
   lastUpdated: String
 });
 

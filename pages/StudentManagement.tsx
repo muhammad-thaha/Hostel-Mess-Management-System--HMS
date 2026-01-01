@@ -124,12 +124,6 @@ const StudentManagement: React.FC = () => {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => alert("Summary Report Feature: Coming Soon in Next Update!")}
-            className="flex-1 md:flex-none px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-black"
-          >
-            Attendance Summary
-          </button>
         </div>
       </div>
 
