@@ -45,7 +45,8 @@ const announcementSchema = new mongoose.Schema({
   content: String,
   author: String,
   date: String,
-  priority: { type: String, enum: ['High', 'Normal'] }
+  priority: { type: String, enum: ['High', 'Normal'] },
+  readBy: { type: [String], default: [] }
 });
 
 const attendanceRecordSchema = new mongoose.Schema({

@@ -23,48 +23,98 @@ const seedData = async () => {
         const hashedPassword = await bcrypt.hash("password123", 10);
 
         // Users
-        const users = [
+        const rawStudents = [
+            { name: "ABDA SAJJAD", gender: "Female", age: 21 },
+            { name: "ADILA SHAHARBAN", gender: "Female", age: 21 },
+            { name: "AFRA KAIS P", gender: "Female", age: 21 },
+            { name: "AISHWARYA VISHWANATHAN", gender: "Female", age: 20 },
+            { name: "ANAGHA SAGUNAN", gender: "Female", age: 21 },
+            { name: "ANCIA S BABU", gender: "Female", age: 20 },
+            { name: "ASWATHI SHYLESH P", gender: "Female", age: 20 },
+            { name: "ATHIRA K", gender: "Female", age: 20 },
+            { name: "CHAITHANYA RETHISH", gender: "Female", age: 20 },
+            { name: "GOPIKA SUNIL", gender: "Female", age: 20 },
+            { name: "HANNA FATHIMA P", gender: "Female", age: 21 },
+            { name: "HARITHA P", gender: "Female", age: 20 },
+            { name: "HRIDYA M", gender: "Female", age: 19 },
+            { name: "JEMSHEERA BASHEER KUNJU", gender: "Female", age: 20 },
+            { name: "JESMINA E", gender: "Female", age: 21 },
+            { name: "JUDHA C K", gender: "Female", age: 20 },
+            { name: "KEERTHANA C K", gender: "Female", age: 20 },
+            { name: "NILA S", gender: "Female", age: 20 },
+            { name: "NISHITHA E", gender: "Female", age: 20 },
+            { name: "PUNYA K", gender: "Female", age: 19 },
+            { name: "REEHA FATHIMA", gender: "Female", age: 20 },
+            { name: "SAJA FATHIMA EV", gender: "Female", age: 21 },
+            { name: "SANDWANA K", gender: "Female", age: 22 },
+            { name: "SANIYA K", gender: "Female", age: 20 },
+            { name: "SENO CLARANSE", gender: "Female", age: 23 },
+            { name: "SHASNA JASMINE K P", gender: "Female", age: 21 },
+            { name: "SHEZA P", gender: "Female", age: 21 },
+            { name: "SREELAKSHMI K S", gender: "Female", age: 20 },
+            { name: "VAISHNAVI A V", gender: "Female", age: 19 },
+            { name: "VRINDA A", gender: "Female", age: 20 },
+            { name: "ABHINANDANA C P", gender: "Female", age: 20 },
+            { name: "ARUNIMA M", gender: "Female", age: 21 },
+            { name: "ABHINAV P V", gender: "Male", age: 20 },
+            { name: "ABHIRAM K", gender: "Male", age: 21 },
+            { name: "AFHAM HUDA M", gender: "Male", age: 22 },
+            { name: "AHAMMED IRFAN", gender: "Male", age: 21 },
+            { name: "AKSHAY RAJEESH", gender: "Male", age: 20 },
+            { name: "AMITH CHALIL", gender: "Male", age: 20 },
+            { name: "ANUPAM NIVED D", gender: "Male", age: 21 },
+            { name: "AVINASH M P", gender: "Male", age: 20 },
+            { name: "GAUTHAM KRISHNA", gender: "Male", age: 19 },
+            { name: "JOEAL RAPHEAL JAMES", gender: "Male", age: 20 },
+            { name: "KASHINATH A M", gender: "Male", age: 21 },
+            { name: "MOHAMED BINSAL", gender: "Male", age: 19 },
+            { name: "MOHAMMED SHAHMEL A N P", gender: "Male", age: 21 },
+            { name: "MUHAMMAD RASHAD HASHIM", gender: "Male", age: 20 },
+            { name: "MUHAMMED RAZIN K T", gender: "Male", age: 21 },
+            { name: "NAJIH V", gender: "Male", age: 20 },
+            { name: "THEJWIN T K", gender: "Male", age: 20 },
+            { name: "MUHAMMAD RISHAL P", gender: "Male", age: 22 }
+        ];
+
+        const studentUsers = await Promise.all(rawStudents.map(async (s, i) => {
+            // Password is name
+            const password = await bcrypt.hash(s.name, 10);
+            return {
+                name: s.name,
+                email: s.name.toLowerCase().replace(/\s+/g, '') + "@student.gcek.ac.in",
+                password: password,
+                role: "STUDENT",
+                registerNumber: `KNR21CS${(100 + i).toString()}`,
+                department: "CSE",
+                year: "3rd",
+                messStatus: "Active",
+                messCardId: `MC-2024-${(100 + i).toString()}`
+            };
+        }));
+
+        const adminPassword = await bcrypt.hash("password123", 10);
+        const staffUsers = [
             {
                 name: "Dr. Suresh Kumar",
                 email: "warden@gcek.ac.in",
-                password: hashedPassword,
+                password: adminPassword,
                 role: "WARDEN_MATREN",
             },
             {
                 name: "Ravi Teja",
                 email: "mess@gcek.ac.in",
-                password: hashedPassword,
+                password: adminPassword,
                 role: "CHAIRMAN_SECRETARY",
-            },
-            {
-                name: "Rahul Das",
-                email: "rahul@student.gcek.ac.in",
-                password: hashedPassword,
-                role: "STUDENT",
-                registerNumber: "KNR21CS045",
-                department: "CSE",
-                year: "3rd",
-                messStatus: "Active",
-                messCardId: "MC-2024-045",
             },
             {
                 name: "Sunil V",
                 email: "sunil@staff.gcek.ac.in",
-                password: hashedPassword,
+                password: adminPassword,
                 role: "STAFF",
-            },
-            {
-                name: "Arjun P",
-                email: "arjun@student.gcek.ac.in",
-                password: hashedPassword,
-                role: "STUDENT",
-                registerNumber: "KNR21CS050",
-                department: "ME",
-                year: "3rd",
-                messStatus: "Active",
-                messCardId: "MC-2024-050",
             }
         ];
+
+        const users = [...staffUsers, ...studentUsers];
 
         await User.insertMany(users);
         console.log('Users seeded');
@@ -207,21 +257,22 @@ const seedData = async () => {
         console.log('Menu seeded');
 
         // Complaints
-        const rahul = await User.findOne({ email: "rahul@student.gcek.ac.in" });
-        const arjun = await User.findOne({ email: "arjun@student.gcek.ac.in" });
+        const students = await User.find({ role: "STUDENT" }).limit(2);
+        const student1 = students[0];
+        const student2 = students[1];
 
         const complaints = [
             {
-                studentId: rahul ? rahul._id : "temp_id_1",
-                studentName: "Rahul Das",
+                studentId: student1 ? student1._id : "temp_id_1",
+                studentName: student1 ? student1.name : "Student 1",
                 category: "Quality",
                 description: "Dinner curry was too salty",
                 status: "In Progress",
                 createdAt: "2024-05-20",
             },
             {
-                studentId: arjun ? arjun._id : "temp_id_2",
-                studentName: "Arjun P",
+                studentId: student2 ? student2._id : "temp_id_2",
+                studentName: student2 ? student2.name : "Student 2",
                 category: "Hygiene",
                 description: "Table cleaning was delayed today",
                 status: "Pending",

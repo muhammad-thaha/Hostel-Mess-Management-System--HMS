@@ -62,6 +62,7 @@ export interface Announcement {
   author: string;
   date: string;
   priority: 'High' | 'Normal';
+  readBy?: string[];
 }
 
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner';

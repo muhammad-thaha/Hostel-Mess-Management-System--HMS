@@ -140,6 +140,18 @@ router.put('/announcements/:id', async (req, res) => {
 router.delete('/announcements/:id', async (req, res) => {
   res.json(await Announcement.findByIdAndDelete(req.params.id));
 });
+router.post('/announcements/:id/read', async (req, res) => {
+  const { userId } = req.body;
+  const announcement = await Announcement.findById(req.params.id);
+  if (announcement) {
+    if (!announcement.readBy) announcement.readBy = [];
+    if (!announcement.readBy.includes(userId)) {
+      announcement.readBy.push(userId);
+      await announcement.save();
+    }
+  }
+  res.json(announcement);
+});
 
 // --- AttendanceRecord Routes ---
 router.get('/attendance', async (req, res) => {

@@ -11,18 +11,41 @@ const Attendance: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then((data: User[]) => {
-        const studentList = data.filter(u => u.role === UserRole.STUDENT);
+    const fetchData = async () => {
+      try {
+        const [usersRes, attendanceRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/attendance')
+        ]);
+
+        const users = await usersRes.json();
+        const attendance = await attendanceRes.json();
+
+        const studentList = users.filter((u: User) => u.role === UserRole.STUDENT);
         setStudents(studentList);
-        // Initialize records with default Present or fetch existing
-        const initialRecords: Record<string, 'Present' | 'Absent'> = {};
-        studentList.forEach(s => initialRecords[s.id || s._id] = 'Present'); // Default to Present
-        setRecords(initialRecords);
-      })
-      .catch(err => console.error("Failed to fetch users", err));
-  }, []);
+
+        // Map existing attendance for this date/meal
+        const currentRecords: Record<string, 'Present' | 'Absent'> = {};
+        const sessionAttendance = attendance.filter((a: any) =>
+          a.date === date && a.mealType === mealType
+        );
+
+        studentList.forEach(s => {
+          const studentId = s.id || s._id;
+          const record = sessionAttendance.find((a: any) =>
+            (a.studentId === studentId) || (a.studentId && a.studentId._id === studentId)
+          );
+          currentRecords[studentId!] = record ? record.status : 'Present';
+        });
+
+        setRecords(currentRecords);
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+      }
+    };
+
+    fetchData();
+  }, [date, mealType]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -51,6 +74,34 @@ const Attendance: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleExport = () => {
+    const headers = ["Mess Card ID", "Name", "Department", "Status", "Meal Type", "Date"];
+    const csvContent = [
+      headers.join(","),
+      ...students.map(student => {
+        const id = student.id || student._id;
+        return [
+          student.messCardId || 'N/A',
+          `"${student.name}"`, // Quote name to handle potential commas
+          student.department || '',
+          records[id] || 'Absent',
+          mealType,
+          date.split('-').reverse().join('-')
+        ].join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `attendance_${date}_${mealType}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const presentCount = Object.values(records).filter(v => v === 'Present').length;
@@ -117,7 +168,10 @@ const Attendance: React.FC = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input type="text" placeholder="Search mess ID or name..." className="pl-9 pr-4 py-2 w-full border border-gray-100 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
             </div>
-            <button className="flex items-center space-x-2 px-4 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">
+            <button
+              onClick={handleExport}
+              className="flex items-center space-x-2 px-4 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50"
+            >
               <Download size={14} />
               <span>Export Today's Sheet</span>
             </button>
@@ -156,8 +210,8 @@ const Attendance: React.FC = () => {
                           <button
                             onClick={() => setRecords(prev => ({ ...prev, [id]: 'Present' }))}
                             className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${records[id] === 'Present'
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100'
-                                : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100'
+                              : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
                               }`}
                           >
                             <Check size={14} />
@@ -166,8 +220,8 @@ const Attendance: React.FC = () => {
                           <button
                             onClick={() => setRecords(prev => ({ ...prev, [id]: 'Absent' }))}
                             className={`w-24 flex items-center justify-center space-x-2 py-1.5 rounded-lg border text-xs font-bold transition-all ${records[id] === 'Absent'
-                                ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100'
-                                : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                              ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100'
+                              : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
                               }`}
                           >
                             <X size={14} />

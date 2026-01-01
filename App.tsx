@@ -14,6 +14,8 @@ import ComplaintSystem from './pages/ComplaintSystem';
 import Attendance from './pages/Attendance';
 import Announcements from './pages/Announcements';
 
+import MessReport from './pages/MessReport';
+
 type AuthView = 'login' | 'signup';
 
 const App: React.FC = () => {
@@ -66,8 +68,8 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return authView === 'login' 
-      ? <Login onLogin={handleLogin} onToggleAuth={() => setAuthView('signup')} /> 
+    return authView === 'login'
+      ? <Login onLogin={handleLogin} onToggleAuth={() => setAuthView('signup')} />
       : <Signup onSignup={handleLogin} onToggleAuth={() => setAuthView('login')} />;
   }
 
@@ -88,12 +90,7 @@ const App: React.FC = () => {
       case 'announcements':
         return <Announcements user={currentUser} />;
       case 'reports':
-        return (
-          <div className="p-12 text-center text-slate-500 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-            <h2 className="text-2xl font-black text-slate-900 mb-2">Analytics & Reports</h2>
-            <p className="font-medium">Detailed consumption data and financial audits for {new Date().getFullYear()}.</p>
-          </div>
-        );
+        return <MessReport user={currentUser} />;
       default:
         return <div className="p-8 text-center text-slate-400 font-bold">Module under active development.</div>;
     }
@@ -101,10 +98,10 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
-      <Sidebar 
-        items={filteredNavItems} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+      <Sidebar
+        items={filteredNavItems}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         user={currentUser}
         onLogout={handleLogout}
       />

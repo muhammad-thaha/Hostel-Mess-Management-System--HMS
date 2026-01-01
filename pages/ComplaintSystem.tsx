@@ -8,6 +8,10 @@ import {
   AlertCircle,
   ChevronRight,
   Filter,
+  Trash2,
+  Save,
+  X,
+  Loader2,
 } from "lucide-react";
 import CustomDropdown from "../components/CustomDropdown";
 
@@ -20,6 +24,8 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newComplaint, setNewComplaint] = useState({ category: 'Maintenance', description: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("All Complaints");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const isAdmin = user.role === UserRole.CHAIRMAN_SECRETARY || user.role === UserRole.WARDEN_MATREN || user.role === UserRole.STAFF;
 
@@ -42,7 +48,7 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          studentId: user.id,
+          studentId: user.id || user._id,
           studentName: user.name,
           category: newComplaint.category,
           description: newComplaint.description,
@@ -62,20 +68,64 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
     }
   };
 
+  const handleUpdateStatus = async (id: string, newStatus: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/complaints/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setComplaints(prev => prev.map(c =>
+          (c.id === id || c._id === id) ? { ...c, status: newStatus as any } : c
+        ));
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+    try {
+      const res = await fetch(`/api/complaints/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setComplaints(prev => prev.filter(c => (c.id !== id && c._id !== id)));
+      }
+    } catch (err) {
+      console.error("Failed to delete complaint", err);
+    }
+  };
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "Resolved":
         return "bg-emerald-100 text-emerald-700 border-emerald-200";
       case "In Progress":
         return "bg-blue-100 text-blue-700 border-blue-200";
+      case "Pending":
       default:
         return "bg-orange-100 text-orange-700 border-orange-200";
     }
   };
 
-  const filteredComplaints = isAdmin
-    ? complaints
-    : complaints.filter((c) => c.studentId === user.id);
+  // 1. Filter by User Role (if not admin)
+  // 2. Filter by Category (selected from UI)
+  const filteredComplaints = complaints.filter(c => {
+    const matchesUser = isAdmin ? true : (c.studentId === user.id || c.studentId === user._id);
+    const matchesCategory = categoryFilter === "All Complaints" ? true : c.category === categoryFilter;
+    return matchesUser && matchesCategory;
+  });
+
+  // Calculate stats based on ALL complaints (or relevant subset)
+  const totalComplaints = complaints.length;
+  const resolvedCount = complaints.filter(c => c.status === 'Resolved').length;
+  const resolutionRate = totalComplaints > 0 ? Math.round((resolvedCount / totalComplaints) * 100) : 0;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -112,7 +162,8 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
                 (cat) => (
                   <button
                     key={cat}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${cat === "All Complaints"
+                    onClick={() => setCategoryFilter(cat)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${categoryFilter === cat
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-500 hover:bg-gray-50"
                       }`}
@@ -129,16 +180,16 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
                 Resolved
               </span>
-              <span className="text-sm font-bold text-emerald-600">84%</span>
+              <span className="text-sm font-bold text-emerald-600">{resolutionRate}%</span>
             </div>
             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-emerald-500"
-                style={{ width: "84%" }}
+                className="h-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${resolutionRate}%` }}
               ></div>
             </div>
             <p className="text-[10px] text-gray-400 leading-tight">
-              Great job! Most issues are resolved within 24 hours.
+              {resolvedCount} of {totalComplaints} issues resolved.
             </p>
           </div>
         </div>
@@ -147,43 +198,46 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
         <div className="lg:col-span-9">
           <div className="space-y-4">
             {filteredComplaints.length > 0 ? (
-              filteredComplaints.map((complaint) => (
-                <div
-                  key={complaint.id || complaint._id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-blue-200 transition-all group cursor-pointer overflow-hidden"
-                >
-                  <div className="flex">
-                    <div
-                      className={`w-1.5 ${complaint.status === "Resolved"
-                        ? "bg-emerald-500"
-                        : complaint.status === "In Progress"
-                          ? "bg-blue-500"
-                          : "bg-orange-500"
-                        }`}
-                    ></div>
-                    <div className="flex-1 p-5 sm:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                        <div className="flex items-center space-x-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${getStatusStyle(
-                              complaint.status
-                            )}`}
-                          >
-                            {complaint.status}
-                          </span>
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                            {complaint.category}
+              filteredComplaints.map((complaint) => {
+                const cId = complaint.id || complaint._id || '';
+                return (
+                  <div
+                    key={cId}
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-blue-200 transition-all group overflow-hidden"
+                  >
+                    <div className="flex flex-col sm:flex-row">
+                      <div
+                        className={`sm:w-1.5 h-1.5 sm:h-auto ${complaint.status === "Resolved"
+                          ? "bg-emerald-500"
+                          : complaint.status === "In Progress"
+                            ? "bg-blue-500"
+                            : "bg-orange-500"
+                          }`}
+                      ></div>
+                      <div className="flex-1 p-5 sm:p-6 space-y-4">
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center space-x-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${getStatusStyle(
+                                complaint.status
+                              )}`}
+                            >
+                              {complaint.status}
+                            </span>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                              {complaint.category}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-400 flex items-center">
+                            <Clock size={12} className="mr-1" />
+                            {complaint.createdAt}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-400 flex items-center">
-                          <Clock size={12} className="mr-1" />
-                          {complaint.createdAt}
-                        </span>
-                      </div>
 
-                      <div className="flex items-start justify-between">
+                        {/* Content */}
                         <div>
-                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
+                          <h4 className="text-sm font-bold text-gray-900 mb-2">
                             {complaint.description}
                           </h4>
                           <p className="text-xs text-gray-500">
@@ -191,37 +245,66 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
                             <span className="font-semibold text-gray-700">
                               {complaint.studentName}
                             </span>{" "}
-                            • ID: #{complaint.studentId?.substring(0, 6)}
+                            {complaint.studentId && `• ID: #${complaint.studentId.substring(0, 6)}`}
                           </p>
                         </div>
-                        <ChevronRight
-                          size={20}
-                          className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all"
-                        />
-                      </div>
 
-                      {complaint.status === "In Progress" && (
-                        <div className="mt-6 flex items-center space-x-2 text-blue-600">
-                          <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
-                          <p className="text-[11px] font-bold uppercase tracking-wider">
-                            Assigned to Maintenance Staff
-                          </p>
-                        </div>
-                      )}
+                        {/* Admin Controls */}
+                        {isAdmin && (
+                          <div className="pt-4 border-t border-gray-50 flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs font-bold text-gray-400 uppercase">Update Status:</span>
+                              <div className="flex space-x-1">
+                                {['Pending', 'In Progress', 'Resolved'].map((status) => (
+                                  <button
+                                    key={status}
+                                    onClick={() => handleUpdateStatus(cId, status)}
+                                    disabled={updatingId === cId || complaint.status === status}
+                                    className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all border ${complaint.status === status
+                                        ? getStatusStyle(status) + " cursor-default"
+                                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                      }`}
+                                  >
+                                    {status}
+                                  </button>
+                                ))}
+                                {updatingId === cId && <Loader2 size={14} className="animate-spin text-blue-500 ml-2" />}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDelete(cId)}
+                              className="text-red-400 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                              title="Delete Complaint"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Student View - Status Message */}
+                        {!isAdmin && complaint.status === "In Progress" && (
+                          <div className="mt-2 flex items-center space-x-2 text-blue-600">
+                            <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+                            <p className="text-[11px] font-bold uppercase tracking-wider">
+                              Assigned to Staff - Resolution in progress
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-20 text-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <MessageSquare className="text-gray-300" size={32} />
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">
-                  No Complaints Found
+                  No {categoryFilter !== "All Complaints" ? categoryFilter : ""} Complaints Found
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Everything seems to be running smoothly!
+                  Total complaints: {complaints.length}
                 </p>
               </div>
             )}
@@ -242,7 +325,7 @@ const ComplaintSystem: React.FC<ComplaintSystemProps> = ({ user }) => {
                   onClick={() => setIsAdding(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  &times;
+                  <X size={20} />
                 </button>
               </div>
               <div className="space-y-5">
