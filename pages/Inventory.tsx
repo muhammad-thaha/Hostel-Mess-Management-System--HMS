@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, MessResource } from '../types';
-import { Package, Plus, Search, AlertCircle, TrendingDown, Clock, Trash2, X, FileText } from 'lucide-react';
+import { Package, Plus, Search, AlertCircle, TrendingDown, Clock, Trash2, X, FileText, Sparkles, BrainCircuit, AlertTriangle, AlertOctagon, Check } from 'lucide-react';
+import { UserRole } from '../types';
 
 interface InventoryProps {
   user: User;
@@ -34,6 +35,10 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
   const [formData, setFormData] = useState<ResourceFormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'stock' | 'usage'>('stock');
+  const [predictions, setPredictions] = useState<any>(null);
+  const [predicting, setPredicting] = useState(false);
+
+  const isManager = user.role === UserRole.CHAIRMAN_SECRETARY || user.role === UserRole.WARDEN_MATREN;
 
   const fetchResources = () => {
     fetch('/api/resources')
@@ -148,6 +153,86 @@ const Inventory: React.FC<InventoryProps> = ({ user }) => {
           <span className="font-semibold text-sm">Add New Resource</span>
         </button>
       </div>
+
+      {/* Predictive Analysis Section - Only for Managers */}
+      {isManager && (
+        <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-200">
+          {/* Decorative bg elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -ml-16 -mb-16"></div>
+
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-xl font-black flex items-center mb-2">
+                  <Sparkles className="mr-2 text-indigo-400" size={20} />
+                  AI Stock Predictor
+                </h3>
+                <p className="text-indigo-200 text-sm max-w-lg">
+                  Our advanced AI analyzes your upcoming menu and current stock levels to predict potential shortages before they happen.
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  setPredictions(null);
+                  setPredicting(true);
+                  try {
+                    const res = await fetch('/api/ai/predict-inventory?type=upcoming', { method: 'POST' });
+                    const data = await res.json();
+                    setPredictions(data);
+                  } catch (e) {
+                    console.error(e);
+                  } finally {
+                    setPredicting(false);
+                  }
+                }}
+                disabled={predicting}
+                className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-bold shadow-lg shadow-indigo-900/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {predicting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <BrainCircuit size={18} />}
+                <span>{predicting ? 'Analyzing...' : 'Run Analysis'}</span>
+              </button>
+            </div>
+
+            {/* Prediction Results */}
+            {predictions && (
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 animate-in fade-in slide-in-from-bottom-4">
+                {predictions.length > 0 ? (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-red-300 flex items-center text-sm uppercase tracking-wider">
+                      <AlertTriangle size={16} className="mr-2" />
+                      Risks Detected
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {predictions.map((p: any, idx: number) => (
+                        <div key={idx} className="bg-red-500/20 border border-red-500/30 p-4 rounded-xl flex items-start gap-3">
+                          <div className="mt-1">
+                            {p.urgency === 'High' ? <AlertOctagon size={18} className="text-red-400" /> : <AlertTriangle size={18} className="text-orange-400" />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white text-sm">{p.item}</p>
+                            <p className="text-xs text-red-100 mt-1">{p.reason}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-emerald-300 gap-3 p-2">
+                    <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                      <Check size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold">All Clear!</p>
+                      <p className="text-xs text-emerald-100">Inventory levels look sufficient for the upcoming menu.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">

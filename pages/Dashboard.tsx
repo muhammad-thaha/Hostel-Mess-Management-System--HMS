@@ -75,6 +75,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
   const [resources, setResources] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [showQuickActions, setShowQuickActions] = useState(false);
 
   useEffect(() => {
@@ -90,6 +91,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
     fetch("/api/complaints")
       .then((res) => res.json())
       .then(setComplaints);
+    fetch("/api/attendance")
+      .then((res) => res.json())
+      .then(setAttendance);
   }, []);
 
   const lowStockResources = resources.filter(
@@ -98,6 +102,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
   const totalMessMembers = users.filter(
     (u: any) => u.messStatus === "Active"
   ).length;
+
+  // Calculate dynamic stats
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Specific stats for Lunch today
+  const lunchAttendance = attendance.filter((a: any) =>
+    a.date === todayStr && a.mealType === 'Lunch'
+  );
+  const lunchServedCount = lunchAttendance.filter((a: any) => a.status === 'Present').length;
+
+  // Attendance Rate (Based on Lunch today as proxy, or 0 if no data yet)
+  const participationRate = totalMessMembers > 0
+    ? ((lunchServedCount / totalMessMembers) * 100).toFixed(1)
+    : "0";
 
   const isAdmin =
     user.role === UserRole.CHAIRMAN_SECRETARY ||
@@ -123,8 +141,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
           </h1>
           <p className="text-slate-500 font-medium">
             The mess is currently serving{" "}
-            <span className="text-emerald-600 font-bold">Lunch</span>. 412
-            served so far.
+            <span className="text-emerald-600 font-bold">Lunch</span>. {lunchServedCount}
+            {" "}served so far.
           </p>
         </div>
         <div className="flex items-center space-x-4 relative">
@@ -196,13 +214,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setActiveTab }) => {
         />
         <StatCard
           title="Lunch Served"
-          value="412"
+          value={lunchServedCount.toString()}
           icon={<Utensils size={22} />}
           colorClass="bg-slate-900 shadow-slate-300"
         />
         <StatCard
           title="Attendance Rate"
-          value="82.4%"
+          value={`${participationRate}%`}
           icon={<ClipboardList size={22} />}
           colorClass="bg-indigo-600 shadow-indigo-200"
           trend="+3.2%"

@@ -15,6 +15,7 @@ import Attendance from './pages/Attendance';
 import Announcements from './pages/Announcements';
 
 import MessReport from './pages/MessReport';
+import MessMateChat from './components/MessMateChat';
 
 type AuthView = 'login' | 'signup';
 
@@ -111,6 +112,7 @@ const App: React.FC = () => {
           {renderContent()}
         </main>
       </div>
+      <MessMateChat user={currentUser} />
     </div>
   );
 };

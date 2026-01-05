@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { User, UserRole, MessMenu } from "../types";
-import { Utensils, Edit3, Clock, Calendar, ChefHat } from "lucide-react";
+import { Utensils, Edit3, Clock, Calendar, ChefHat, Sparkles } from "lucide-react";
 
 interface MessManagementProps {
   user: User;
@@ -17,6 +17,34 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [members, setMembers] = useState<User[]>([]);
+  const [generatingMenu, setGeneratingMenu] = useState(false);
+
+  const generateAiMenu = async () => {
+    setGeneratingMenu(true);
+    try {
+      const res = await fetch('/api/ai/menu-plan', { method: 'POST' });
+      const data = await res.json();
+
+      if (Array.isArray(data)) {
+        // Transform AI data to match our type if needed
+        const newMenu = data.map((d: any) => ({
+          ...d,
+          type: 'upcoming'
+        }));
+        setUpcomingMenu(newMenu);
+        // Automatically open edit modal to let user review/save
+        setEditMenu(newMenu);
+        setShowModal(true);
+      } else {
+        alert("AI generated an invalid format.");
+      }
+    } catch (err) {
+      console.error("AI Menu Error", err);
+      alert("Failed to generate AI menu. Please try again.");
+    } finally {
+      setGeneratingMenu(false);
+    }
+  };
 
   // Helper to determine if user is manager
   const isManager = user.role === UserRole.CHAIRMAN_SECRETARY || user.role === UserRole.WARDEN_MATREN;
@@ -318,7 +346,7 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
                 <Calendar size={22} className="mr-3 text-emerald-600" />
                 Weekly Spread
               </h3>
-              <div className="bg-slate-50 p-1 rounded-2xl border border-slate-100 inline-flex">
+              <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100 items-center">
                 <button
                   className={`px-5 py-2 text-xs font-black rounded-xl transition-all ${selectedMenu === "current"
                     ? "text-emerald-600 bg-white shadow-sm"
@@ -339,6 +367,24 @@ const MessManagement: React.FC<MessManagementProps> = ({ user }) => {
                 </button>
               </div>
             </div>
+
+            {/* AI Menu Generator Button - Only visible for managers on Upcoming tab */}
+            {isManager && selectedMenu === 'upcoming' && (
+              <div className="mb-6 flex justify-end">
+                <button
+                  onClick={generateAiMenu}
+                  disabled={generatingMenu}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-500/30 transition-all active:scale-95 disabled:opacity-75 disabled:cursor-not-allowed text-xs"
+                >
+                  {generatingMenu ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <Sparkles size={14} />
+                  )}
+                  <span>{generatingMenu ? 'Designing Menu...' : 'Auto-Plan with AI'}</span>
+                </button>
+              </div>
+            )}
 
             <div className="space-y-4">
               {(selectedMenu === "current" ? currentMenu : upcomingMenu).map(
