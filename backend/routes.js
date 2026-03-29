@@ -12,9 +12,72 @@ console.log("Gemini API Key Configured:", !!process.env.GEMINI_API_KEY);
 
 const router = express.Router();
 
-// Initialize Gemini (using gemini-1.5-pro for compatibility)
+// Initialize Gemini using 2.5 Flash for faster/cheaper responses.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEK_DAY_ORDER = new Map(WEEK_DAYS.map((d, i) => [d, i]));
+
+function pickLatestMenuPerDay(items) {
+  const byDay = new Map();
+  for (const item of items) {
+    const existing = byDay.get(item.day);
+    const itemTs = new Date(item.updatedAt || item.createdAt || 0).getTime();
+    const existingTs = existing ? new Date(existing.updatedAt || existing.createdAt || 0).getTime() : -1;
+    if (!existing || itemTs >= existingTs) {
+      byDay.set(item.day, item);
+    }
+  }
+  return [...byDay.values()].sort((a, b) => (WEEK_DAY_ORDER.get(a.day) ?? 99) - (WEEK_DAY_ORDER.get(b.day) ?? 99));
+}
+
+async function getLatestMenuByType(type) {
+  const all = await MessMenu.find({ type });
+  return pickLatestMenuPerDay(all);
+}
+
+function formatMenuLastUpdated(items) {
+  if (!items || items.length === 0) return 'Not available';
+  let latest = 0;
+  for (const item of items) {
+    const ts = new Date(item.updatedAt || item.createdAt || 0).getTime();
+    if (ts > latest) latest = ts;
+  }
+  return latest ? new Date(latest).toLocaleString() : 'Not available';
+}
+
+function buildWeeklySpreadText(items) {
+  if (!items || items.length === 0) return 'Not available';
+  return items.map(m => `${m.day}: B-${m.breakfast}, L-${m.lunch}, D-${m.dinner}`).join(' | ');
+}
+
+function buildDeterministicChatReply(message, context) {
+  const text = (message || '').toLowerCase();
+  const asksUpdateTime = /(last\s*updated|updated\s*on|when\s*(was|is).*(updated|menu))/i.test(text);
+  const asksUpcomingMeal = /(next\s*meal|upcoming\s*meal|what.*meal)/i.test(text);
+  const asksWeeklySpread = /(weekly\s*spread|week\s*menu|weekly\s*menu|full\s*week|schedule)/i.test(text);
+  const asksTodayMenu = /(today('| i)?s\s*(food|menu)|today\s*menu|what.*today)/i.test(text);
+
+  if (asksUpdateTime) {
+    return `Current weekly menu was last updated on ${context.currentMenuLastUpdated}. Upcoming weekly menu was last updated on ${context.upcomingMenuLastUpdated}.`;
+  }
+
+  if (asksUpcomingMeal) {
+    return `Your next meal is ${context.nextMealName} on ${context.nextMealDay} (${context.nextMealTime}). Dish: ${context.nextMealDish}.`;
+  }
+
+  if (asksWeeklySpread) {
+    return `Current week: ${buildWeeklySpreadText(context.currentWeekMenu)}. Upcoming week: ${buildWeeklySpreadText(context.upcomingWeekMenu)}.`;
+  }
+
+  if (asksTodayMenu) {
+    const m = context.menu;
+    return `Today's menu (${context.today}) is Breakfast: ${m?.breakfast || 'Not scheduled'}, Lunch: ${m?.lunch || 'Not scheduled'}, Dinner: ${m?.dinner || 'Not scheduled'}.`;
+  }
+
+  return null;
+}
 
 // --- Health Check ---
 router.get('/health', (req, res) => {
@@ -62,7 +125,7 @@ router.post('/ai/menu-plan', async (req, res) => {
 router.post('/ai/predict-inventory', async (req, res) => {
   try {
     const type = req.query.type || 'upcoming';
-    const menu = await MessMenu.find({ type });
+    const menu = await getLatestMenuByType(type);
     const resources = await MessResource.find();
 
     const menuText = menu.map(m => `${m.day}: B-${m.breakfast}, L-${m.lunch}, D-${m.dinner}`).join('\n');
@@ -104,17 +167,83 @@ router.post('/ai/chat', async (req, res) => {
     console.log("Chat request received:", { userId, role, message });
 
     // 1. Fetch Real Context Data
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = days[new Date().getDay()];
+    const now = new Date();
+    const today = WEEK_DAYS[now.getDay()];
 
-    // Fetch today's menu
-    const menu = await MessMenu.findOne({ day: today, type: 'current' });
+    // Fetch weekly menus for both schedule types.
+    const [currentWeekMenu, upcomingWeekMenu] = await Promise.all([
+      getLatestMenuByType('current'),
+      getLatestMenuByType('upcoming')
+    ]);
+
+    const currentMenuByDay = new Map(currentWeekMenu.map(m => [m.day, m]));
+    const upcomingMenuByDay = new Map(upcomingWeekMenu.map(m => [m.day, m]));
+    // If current week data for today is missing, fallback to upcoming week.
+    const menu = currentMenuByDay.get(today) || upcomingMenuByDay.get(today);
+
+    const weeklyCurrentText = currentWeekMenu.length > 0
+      ? currentWeekMenu.map(m => `- ${m.day}: B-${m.breakfast}, L-${m.lunch}, D-${m.dinner}`).join('\n')
+      : 'Current weekly spread is not available.';
+
+    const weeklyUpcomingText = upcomingWeekMenu.length > 0
+      ? upcomingWeekMenu.map(m => `- ${m.day}: B-${m.breakfast}, L-${m.lunch}, D-${m.dinner}`).join('\n')
+      : 'Upcoming weekly spread is not available.';
+
+    const currentMenuLastUpdated = formatMenuLastUpdated(currentWeekMenu);
+    const upcomingMenuLastUpdated = formatMenuLastUpdated(upcomingWeekMenu);
+
+    const minuteOfDay = now.getHours() * 60 + now.getMinutes();
+    const tomorrow = WEEK_DAYS[(now.getDay() + 1) % 7];
+    let nextMealName = 'Breakfast';
+    let nextMealTime = '07:00 AM - 09:00 AM';
+    let nextMealDay = today;
+
+    if (minuteOfDay < 7 * 60) {
+      nextMealName = 'Breakfast';
+      nextMealTime = '07:00 AM - 09:00 AM';
+      nextMealDay = today;
+    } else if (minuteOfDay < 12 * 60) {
+      nextMealName = 'Lunch';
+      nextMealTime = '12:00 PM - 02:00 PM';
+      nextMealDay = today;
+    } else if (minuteOfDay < 19 * 60) {
+      nextMealName = 'Dinner';
+      nextMealTime = '07:00 PM - 09:00 PM';
+      nextMealDay = today;
+    } else {
+      nextMealName = 'Breakfast';
+      nextMealTime = '07:00 AM - 09:00 AM';
+      nextMealDay = tomorrow;
+    }
+
+    // Prefer current schedule, but fallback to upcoming schedule for the same day.
+    const nextMealSource = currentMenuByDay.get(nextMealDay) || upcomingMenuByDay.get(nextMealDay);
+
+    const nextMealDish = nextMealSource?.[nextMealName.toLowerCase()] || 'Not scheduled';
 
     // Fetch recent announcements
     const recentAnnouncements = await Announcement.find().sort({ date: -1 }).limit(3);
     const announcementsText = recentAnnouncements.length > 0
       ? recentAnnouncements.map(a => `- ${a.title} (${a.date}): ${a.content}`).join('\n')
       : "No recent announcements.";
+
+    const deterministicReply = buildDeterministicChatReply(message, {
+      today,
+      menu,
+      currentWeekMenu,
+      upcomingWeekMenu,
+      currentMenuLastUpdated,
+      upcomingMenuLastUpdated,
+      nextMealName,
+      nextMealDay,
+      nextMealTime,
+      nextMealDish
+    });
+
+    // Serve menu/schedule queries directly from DB context to avoid quota-related failures.
+    if (deterministicReply) {
+      return res.json({ reply: deterministicReply, source: 'deterministic' });
+    }
 
     // 2. Construct System Context
     const systemContext = `
@@ -126,6 +255,20 @@ router.post('/ai/chat', async (req, res) => {
     - Breakfast: ${menu?.breakfast || "Not scheduled"}
     - Lunch: ${menu?.lunch || "Not scheduled"}
     - Dinner: ${menu?.dinner || "Not scheduled"}
+
+    📅 CURRENT WEEKLY SPREAD:
+    Last Updated: ${currentMenuLastUpdated}
+    ${weeklyCurrentText}
+
+    📆 UPCOMING WEEKLY SPREAD:
+    Last Updated: ${upcomingMenuLastUpdated}
+    ${weeklyUpcomingText}
+
+    🍽️ NEXT UPCOMING MEAL:
+    - Day: ${nextMealDay}
+    - Meal: ${nextMealName}
+    - Time: ${nextMealTime}
+    - Dish: ${nextMealDish}
 
     📢 LATEST ANNOUNCEMENTS:
     ${announcementsText}
@@ -146,8 +289,11 @@ router.post('/ai/chat', async (req, res) => {
     User Message: "${message}"
     
     Instructions:
-    - Answer the user's question based strictly on the provided context (Menu, Announcements, Timings).
-    - If asked about "today's food" or specific meals, use the Menu data provided.
+    - Answer the user's question based strictly on the provided context (today menu, current weekly spread, upcoming weekly spread, next meal, announcements, timings).
+    - If asked when the menu was updated, use the "Last Updated" timestamps exactly as provided.
+    - If asked about "weekly spread" or "week menu", use CURRENT WEEKLY SPREAD and UPCOMING WEEKLY SPREAD.
+    - If asked about "next meal" or "upcoming meal", use NEXT UPCOMING MEAL.
+    - If asked about "today's food" or specific meals, use the TODAY'S MENU data.
     - If asked about news/updates, refer to Announcements.
     - If the user asks to perform an action (like filing a complaint or marking attendance), guide them to the respective tab in the app.
     - Be friendly, concise (max 2-3 sentences), and use emojis.
@@ -165,16 +311,8 @@ router.post('/ai/chat', async (req, res) => {
 
   } catch (error) {
     console.error("Chat Error:", error);
-
-    // Fallback if AI fails: Return the raw menu data we fetched
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = days[new Date().getDay()];
-    // Re-fetch or pass data if possible, but here we'll just try to fail gracefully with a hint
-    // Since we can't easily access 'menu' variable from the catch block without restructuring,
-    // we'll provide a generic but helpful message.
-
     res.json({
-      reply: `⚠️ I'm having trouble connecting to my brain right now. \n\nHowever, you can check **Today's Menu** and **Announcements** directly in their respective tabs!`,
+      reply: `I'm temporarily unable to reach Gemini. I can still answer menu queries like today's menu, upcoming meal, weekly spread, and last updated times from live DB data.`,
       error: error.message // Include technical error for debugging
     });
   }
@@ -273,12 +411,15 @@ router.delete('/resources/:id', async (req, res) => {
 
 // --- MessMenu Routes ---
 router.get('/menu', async (req, res) => {
-  // Optionally filter by type (current/upcoming) if you add a 'type' field to MessMenu
   if (req.query.type) {
-    res.json(await MessMenu.find({ type: req.query.type }));
-  } else {
-    res.json(await MessMenu.find());
+    return res.json(await getLatestMenuByType(req.query.type));
   }
+
+  const [current, upcoming] = await Promise.all([
+    getLatestMenuByType('current'),
+    getLatestMenuByType('upcoming')
+  ]);
+  res.json([...current, ...upcoming]);
 });
 router.post('/menu', async (req, res) => {
   res.json(await MessMenu.create(req.body));

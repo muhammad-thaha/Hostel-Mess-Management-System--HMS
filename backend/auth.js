@@ -34,6 +34,9 @@ router.post('/register', async (req, res) => {
     }
   } catch (e) {
     console.error('Registration error:', e);
+    if ((e?.message || '').toLowerCase().includes('requires authentication')) {
+      return res.status(500).json({ error: 'Database authentication failed. Check MONGO_URI username/password and authSource.' });
+    }
     if (e.name === 'ValidationError') {
       return res.status(400).json({ error: e.message });
     }
@@ -55,6 +58,9 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (e) {
+    if ((e?.message || '').toLowerCase().includes('requires authentication')) {
+      return res.status(500).json({ error: 'Database authentication failed. Check MONGO_URI username/password and authSource.' });
+    }
     res.status(500).json({ error: 'Login failed' });
   }
 });

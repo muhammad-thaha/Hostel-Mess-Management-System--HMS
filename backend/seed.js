@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { User, MessResource, MessMenu, Complaint, Announcement, AttendanceRecord } from './models.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Reuse the root .env so there is one source of truth for configuration.
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/hmms';
 
@@ -176,6 +185,13 @@ const seedData = async () => {
         // Menu
         const menu = [
             {
+                day: "Sunday",
+                breakfast: "Egg Masala Dosa",
+                lunch: "Ghee Rice, Mixed Veg Curry, Toor Dal Fry",
+                dinner: "Kerala Parotta, Chicken Roast",
+                type: "current"
+            },
+            {
                 day: "Monday",
                 breakfast: "Idli, Sambar",
                 lunch: "Rice, Fish Curry, Veg Thoran",
@@ -210,12 +226,26 @@ const seedData = async () => {
                 dinner: "Pathiri, Chicken Curry",
                 type: "current"
             },
+            {
+                day: "Saturday",
+                breakfast: "Urad Dal Vada, Coconut Chutney",
+                lunch: "Chicken Biryani, Raita, Pickle",
+                dinner: "Chapathi, Green Peas Masala",
+                type: "current"
+            }
         ];
 
         await MessMenu.insertMany(menu);
 
         // Upcoming Menu
         const upcomingMenu = [
+            {
+                day: "Sunday",
+                breakfast: "Aval Upma, Banana",
+                lunch: "Rice, Sambar, Beetroot Thoran",
+                dinner: "Porotta, Egg Curry",
+                type: "upcoming"
+            },
             {
                 day: "Monday",
                 breakfast: "Puri, Masala",
@@ -249,6 +279,13 @@ const seedData = async () => {
                 breakfast: "Appam, Stew",
                 lunch: "Sadya (Rice, Sambar, Avial, Payasam)",
                 dinner: "Kanji, Payar",
+                type: "upcoming"
+            },
+            {
+                day: "Saturday",
+                breakfast: "Puttu, Kadala Curry",
+                lunch: "Rice, Fish Curry, Thoran",
+                dinner: "Dosa, Tomato Chutney",
                 type: "upcoming"
             }
         ];

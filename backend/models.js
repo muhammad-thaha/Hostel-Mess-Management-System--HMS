@@ -29,7 +29,7 @@ const messMenuSchema = new mongoose.Schema({
   lunch: String,
   dinner: String,
   type: { type: String, enum: ['current', 'upcoming'], default: 'current' }
-});
+}, { timestamps: true });
 
 const complaintSchema = new mongoose.Schema({
   studentId: String,

@@ -2,8 +2,14 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Always read env from the project root so frontend/backend share one .env file.
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,8 +19,8 @@ console.log("Backend starting...");
 console.log("MongoDB URI:", MONGO_URI);
 console.log("Gemini API Key set:", !!process.env.GEMINI_API_KEY);
 
-import router from './routes.js';
-import authRouter from './auth.js';
+const { default: router } = await import('./routes.js');
+const { default: authRouter } = await import('./auth.js');
 
 app.use(cors());
 app.use(express.json());
